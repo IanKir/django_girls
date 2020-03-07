@@ -37,6 +37,12 @@ def main_page(request):
 
         if form_type == "login_form":
             user_login = request.POST.get("login")
+            if not user_login:
+                return render(
+                    request=request,
+                    template_name='mainpage/mainpage_template.html',
+                    {"problem_description" : "Не указан лоин"}
+                )
 
             # TODO: достать данные формы
 
