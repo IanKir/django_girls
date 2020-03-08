@@ -1,30 +1,56 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
-from .models import Post
-from .forms import PostForm
-from django import views
+from .models import Task
+from .forms import TaskForm
 
-
-class MainPageView(views.View):
-    def get(self, request):
-
-        if request.user.is_authenticated:
-
-            pass
-        else:
-            pass
-
-        # data = request.body.decode()
-        return render(
-            request=request,
-            template_name='mainpage/mainpage_template.html'
-            # using=str(data)
-        )
-        # return {"item": data}
     
 # TODO Ян делает эту часть проекта
+# TODO досмотреть вебинар на яндекс.диске
 def task_board_page(request):
-    pass
+# if request.user.is_authenticated:
+    tasks = Task.objects.filter(published_date__lte=timezone.now()).order_by('published_date')
+    return render(
+        request=request,
+        template_name='taskboard/task_board.html',
+        context={'tasks': tasks}
+    )
+    # else:
+        # return redirect('')
+
+
+def task_detail(request, pk):
+    post = get_object_or_404(Task, pk=pk)
+    return render(request, 'taskboard/task_detail.html', {'post': post})
+
+
+def task_new(request):
+    if request.method == "POST":
+        form = TaskForm(request.POST)
+        if form.is_valid():
+            post = form.save(commit=False)
+            post.author = request.user
+            post.published_date = timezone.now()
+            post.save()
+            return redirect('post_detail', pk=post.pk)
+    else:
+        form = TaskForm()
+    return render(request, 'taskboard/task_edit.html', {'form': form})
+
+
+def task_edit(request, pk):
+    task = get_object_or_404(Task, pk=pk)
+    if request.method == "POST":
+        form = TaskForm(request.POST, instance=task)
+        if form.is_valid():
+            task = form.save(commit=False)
+            task.author = request.user
+            task.published_date = timezone.now()
+            task.save()
+            return redirect('post_detail', pk=task.pk)
+    else:
+        form = TaskForm(instance=task)
+    return render(request, 'taskboard/task_edit.html', {'form': form})
+
 
 # TODO Миша делает эту часть проекта
 def main_page(request):
@@ -41,7 +67,7 @@ def main_page(request):
                 return render(
                     request=request,
                     template_name='mainpage/mainpage_template.html',
-                    {"problem_description" : "Не указан лоин"}
+                    context={"problem_description" : "Не указан лоин"}
                 )
 
             # TODO: достать данные формы
@@ -51,10 +77,9 @@ def main_page(request):
             # TODO: После логина отправить чувака на борду
 
         elif form_type == "registration_form":
-            # СОздать пользователя в базе (гуглим django create user account)
+            # Создать пользователя в базе (гуглим django create user account)
             pass
         else:
-
             pass
             # TODO редиректим чувака на главную (ошибка) not supported form exception
 
@@ -62,47 +87,7 @@ def main_page(request):
         return render(
             request=request,
             template_name='mainpage/mainpage_template.html'
-            # using=str(data)
         )
     else:
-        # TODO: Not supported exception (4**?)
-
-
-def post_list(request):
-    posts = (Post.objects.filter(published_date__lte=timezone.now())
-             .order_by('published_date'))
-    return render(request, 'blog/post_list.html', {'posts': posts})
-
-
-def post_detail(request, pk):
-    post = get_object_or_404(Post, pk=pk)
-    return render(request, 'blog/post_detail.html', {'post': post})
-
-
-def post_new(request):
-    if request.method == "POST":
-        form = PostForm(request.POST)
-        if form.is_valid():
-            post = form.save(commit=False)
-            post.author = request.user
-            post.published_date = timezone.now()
-            post.save()
-            return redirect('post_detail', pk=post.pk)
-    else:
-        form = PostForm()
-    return render(request, 'blog/post_edit.html', {'form': form})
-
-
-def post_edit(request, pk):
-    post = get_object_or_404(Post, pk=pk)
-    if request.method == "POST":
-        form = PostForm(request.POST, instance=post)
-        if form.is_valid():
-            post = form.save(commit=False)
-            post.author = request.user
-            post.published_date = timezone.now()
-            post.save()
-            return redirect('post_detail', pk=post.pk)
-    else:
-        form = PostForm(instance=post)
-    return render(request, 'blog/post_edit.html', {'form': form})
+        # Эта ошибка выведится в консоль, нужно сделать ошибку Django
+        raise Exception("Not supported exception 4**?")
