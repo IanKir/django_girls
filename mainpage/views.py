@@ -10,7 +10,6 @@ def task_board_page(request):
     if request.method == 'GET':
         if request.user.is_authenticated:
             tasks = Task.objects.filter(published_date__lte=timezone.now()).order_by('published_date')
-            # tasks = Task.
             return render(
                 request=request,
                 template_name='taskboard/task_board.html',
