@@ -7,31 +7,33 @@ from .forms import TaskForm
 # TODO Ян делает эту часть проекта
 # TODO досмотреть вебинар на яндекс.диске
 def task_board_page(request):
-# if request.user.is_authenticated:
-    tasks = Task.objects.filter(published_date__lte=timezone.now()).order_by('published_date')
-    return render(
-        request=request,
-        template_name='taskboard/task_board.html',
-        context={'tasks': tasks}
-    )
-    # else:
-        # return redirect('')
+    if request.method == 'GET':
+        if request.user.is_authenticated:
+            tasks = Task.objects.filter(published_date__lte=timezone.now()).order_by('published_date')
+            # tasks = Task.
+            return render(
+                request=request,
+                template_name='taskboard/task_board.html',
+                context={'tasks': tasks}
+            )
+        else:
+            return redirect('')
 
 
 def task_detail(request, pk):
-    post = get_object_or_404(Task, pk=pk)
-    return render(request, 'taskboard/task_detail.html', {'post': post})
+    task = get_object_or_404(Task, pk=pk)
+    return render(request, 'taskboard/task_detail.html', {'task': task})
 
 
 def task_new(request):
     if request.method == "POST":
         form = TaskForm(request.POST)
         if form.is_valid():
-            post = form.save(commit=False)
-            post.author = request.user
-            post.published_date = timezone.now()
-            post.save()
-            return redirect('post_detail', pk=post.pk)
+            task = form.save(commit=False)
+            task.author = request.user
+            task.published_date = timezone.now()
+            task.save()
+            return redirect('task_detail', pk=task.pk)
     else:
         form = TaskForm()
     return render(request, 'taskboard/task_edit.html', {'form': form})
@@ -46,7 +48,7 @@ def task_edit(request, pk):
             task.author = request.user
             task.published_date = timezone.now()
             task.save()
-            return redirect('post_detail', pk=task.pk)
+            return redirect('task_detail', pk=task.pk)
     else:
         form = TaskForm(instance=task)
     return render(request, 'taskboard/task_edit.html', {'form': form})
