@@ -1,22 +1,25 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
-from .models import Task
-from .forms import TaskForm
+from mainpage.models import Task
+from mainpage.forms import TaskForm
 
     
 # TODO Ян делает эту часть проекта
-# TODO досмотреть вебинар на яндекс.диске
+# TODO сделать редирект на signin(войти в систему) and signup(зарегистрироваться)
 def task_board_page(request):
     if request.method == 'GET':
         if request.user.is_authenticated:
-            tasks = Task.objects.filter(published_date__lte=timezone.now()).order_by('published_date')
+            tasks = Task.objects.filter(
+                published_date__lte=timezone.now(),
+                author=request.user
+            ).order_by('published_date')
             return render(
                 request=request,
                 template_name='taskboard/task_board.html',
                 context={'tasks': tasks}
             )
         else:
-            return redirect('')
+            return redirect(to='signup')
 
 
 def task_detail(request, pk):
@@ -57,7 +60,7 @@ def task_edit(request, pk):
 def main_page(request):
 
     if request.user.is_authenticated:
-        pass # кинуть на борду редиректом
+        return redirect(to='task_board_page')
 
     if request.method == 'POST':        
         form_type = request.POST.get("form_type")
