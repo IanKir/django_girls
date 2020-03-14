@@ -19,7 +19,7 @@ def task_board_page(request):
                 context={'tasks': tasks}
             )
         else:
-            return redirect(to='signup')
+            return redirect(to='main_page')
 
 
 def task_detail(request, pk):
@@ -64,14 +64,14 @@ def main_page(request):
 
     if request.method == 'POST':        
         form_type = request.POST.get("form_type")
-
+        # add_authenticate
         if form_type == "login_form":
             user_login = request.POST.get("login")
             if not user_login:
                 return render(
                     request=request,
                     template_name='mainpage/mainpage_template.html',
-                    context={"problem_description" : "Не указан лоин"}
+                    context={"problem_description": "Не указан логин"}
                 )
 
             # TODO: достать данные формы
