@@ -1,11 +1,6 @@
-from django.shortcuts import render
 from django.contrib.auth import login, authenticate
-from .forms import SignUpForm
+from register.forms import SignUpForm
 from django.shortcuts import render, redirect
-
-
-def mainpage(request):
-    return render(request, 'mainpage_template.html')
 
 
 def signup_view(request):
@@ -22,7 +17,7 @@ def signup_view(request):
         password = form.cleaned_data.get('password1')
         user = authenticate(username=username, password=password)
         login(request, user)
-        return redirect()
+        return redirect(to='task_board_page')
     else:
         form = SignUpForm()
     return render(request, 'register/signup.html', {'form': form})
