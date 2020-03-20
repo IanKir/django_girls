@@ -2,7 +2,7 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
-# TODO: нужно-ли добавить новую модель для юзеров?
+
 class Task(models.Model):
     author = models.ForeignKey(settings.AUTH_USER_MODEL,
                                on_delete=models.CASCADE)
@@ -22,5 +22,6 @@ class Task(models.Model):
         verbose_name = 'Задача'
         verbose_name_plural = 'Задачи'
 
-# class User(models.Model):
-#
+
+# class Profile(models.Model):
+# extends native django user relationship one_to_one
