@@ -21,3 +21,7 @@ class Task(models.Model):
     class Meta:
         verbose_name = 'Задача'
         verbose_name_plural = 'Задачи'
+
+
+# class Profile(models.Model):
+# extends native django user relationship one_to_one

@@ -1,0 +1,32 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+    <title>Login form</title>
+</head>
+<body>
+    <ul class="hr">
+        <li>
+            <h1>Sign up</h1>
+            <form method="POST" class="task-form">{% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="save btn btn-default">Принять</button>
+            </form>
+        </li>
+        <li>
+            <h1>Sign in</h1>
+            <form method="POST" class="task-form">{% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="save btn btn-default">Принять</button>
+            </form>
+        </li>
+    </ul>
+
+
+
+
+    {{ problem_description }}
+</body>
+</html>
