@@ -6,7 +6,6 @@ from mainpage.forms import TaskForm
 
     
 # TODO Ян делает эту часть проекта
-# TODO сделать редирект на signin(войти в систему) and signup(зарегистрироваться)
 def task_board_page(request):
     if request.method == 'GET':
         if request.user.is_authenticated:
@@ -19,7 +18,7 @@ def task_board_page(request):
                 context={'tasks': tasks}
             )
         else:
-            return redirect(to='user_login')
+            return redirect(to='user_login_logout')
 
 
 def task_detail(request, pk):
