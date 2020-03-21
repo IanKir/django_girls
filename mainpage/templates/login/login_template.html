@@ -9,18 +9,40 @@
 <body>
     <ul class="hr">
         <li>
-            <h1>Sign up</h1>
-            <form method="POST" class="task-form">{% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" class="save btn btn-default">Принять</button>
-            </form>
+            <h1>Sign in</h1>
+            <FORM id="login_form" method="post" action="task_board">
+        {% csrf_token %}
+                Username:
+                <input type="text" name="username" value="" id="username" size="50" />
+                <br><br/>
+                Password:
+                <input type="password" name="password  " value="" id="password" size="50" />
+                <br>  <br/>
+        <INPUT type="submit" name="submit" value="Принять"></INPUT>
+        </FORM>
         </li>
         <li>
-            <h1>Sign in</h1>
-            <form method="POST" class="task-form">{% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" class="save btn btn-default">Принять</button>
-            </form>
+
+            <h1>Sign up</h1>
+             <FORM id="login_form" method="post" action="./">
+        {% csrf_token %}
+                Username:
+                <input type="text" name="username" value="" id="username" size="50" />
+                <br><br/>
+                 First name:
+                <input type="text" name="first_name" value="" id="first_name" size="50" />
+                <br><br/>
+                 Last name:
+                <input type="text" name="Last name" value="" id="Last name" size="50" />
+                <br><br/>
+                 Email:
+                <input type="text" name="Email   " value="" id="Email" size="50" />
+                <br><br/>
+                Password:
+                <input type="password" name="password  " value="" id="password" size="50" />
+              <br>  <br/>
+        <INPUT type="submit" name="submit" value="Принять"></INPUT>
+        </FORM>
         </li>
     </ul>
 

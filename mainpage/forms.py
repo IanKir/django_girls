@@ -1,6 +1,7 @@
 from django import forms
-
 from mainpage.models import Task
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
 
 
 class TaskForm(forms.ModelForm):
@@ -9,9 +10,12 @@ class TaskForm(forms.ModelForm):
         model = Task
         fields = ('title', 'text',)
 
+class SignUpForm(UserCreationForm):
+    first_name = forms.CharField(max_length=100, help_text='Last Name')
+    last_name = forms.CharField(max_length=100, help_text='Last Name')
+    email = forms.EmailField(max_length=150, help_text='Email')
 
-class UserForm(forms.ModelForm):
 
-    # class Meta:
-        # model =
-    pass
+    class Meta:
+        model = User
+        fields = ('username', 'first_name', 'last_name', 'email', 'password1', 'password2',)

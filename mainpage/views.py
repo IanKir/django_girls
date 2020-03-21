@@ -3,6 +3,8 @@ from django.http import Http404
 from django.utils import timezone
 from mainpage.models import Task
 from mainpage.forms import TaskForm
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
 
     
 # TODO Ян делает эту часть проекта
@@ -86,28 +88,63 @@ def user_login_logout(request):
 
     if request.method == 'POST':
         form_type = request.POST.get("form_type")
-        # add_authenticate
+
         if form_type == "login_form":
-            user_login = request.POST.get("login")
-            if not user_login:
+            username = request.POST.get("login")
+            if not username:
                 return render(
                     request=request,
                     template_name='login/login_template.html',
-                    context={"problem_description": "Не указан логин"}
+                    context={"problem_description": "Не указан логин"} )
+
+        if form_type == "password_form":
+            password = request.POST.get("password")
+            if not password:
+                return render(
+                    request = request,
+                    template_name = 'login/login_template.html',
+                    context = {"problem_description": "Не указан пароль"} )
+        user = authenticate(username=username, password=password)
+        if user is not None:
+            if user.is_active:
+                login(request,user)
+                return render(
+                    request=request,
+                    template_name='mainpage/task_board.html',
+                    context={'tasks': tasks}
                 )
-
-            # TODO: достать данные формы
-
+            else:
+                return render(
+                    request=request,
+                    template_name='login/login_template.html',
+                    context={"problem_description": "Ошибка авторизации"})
             # TODO : залогинить пользователя на task/board если все ок или перекинуть его назад на mainpage если нет
 
             # TODO: После логина отправить чувака на борду
 
         elif form_type == "registration_form":
-            # user_login.username =
-            # Создать пользователя в базе (гуглим django create user account)
-            pass
+            form = registration_form(request.POST)
+            if form.is_valid():
+                user = form.save()
+                user.refresh_from_db()
+                user.profile.first_name = form.cleaned_data.get('first_name')
+                user.profile.last_name = form.cleaned_data.get('last_name')
+                user.profile.email = form.cleaned_data.get('email')
+                user.save()
+                username = form.cleaned_data.get('username')
+                password = form.cleaned_data.get('password1')
+                user = authenticate(username=username, password=password)
+                login(request, user)
+                return render(
+                    request=request,
+                    template_name='mainpage/task_board.html',
+                    context={'tasks': tasks}
+                )
         else:
-            pass
+            return render(
+                request=request,
+                template_name='login/login_template.html',
+                context={"problem_description": "not supported form exception"})
             # TODO редиректим чувака на главную (ошибка) not supported form exception
 
     elif request.method == 'GET':
