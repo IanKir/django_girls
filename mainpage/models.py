@@ -1,6 +1,7 @@
 from django.conf import settings
-from django.db import models
 from django.utils import timezone
+from django.db import models
+from django.contrib.auth.models import User
 
 
 class Task(models.Model):
@@ -23,5 +24,11 @@ class Task(models.Model):
         verbose_name_plural = 'Задачи'
 
 
-# class Profile(models.Model):
-# extends native django user relationship one_to_one
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    first_name = models.CharField(max_length=100, blank=True)
+    last_name = models.CharField(max_length=100, blank=True)
+    email = models.EmailField(max_length=150, blank=True)
+
+    def __str__(self):
+        return self.user.username
