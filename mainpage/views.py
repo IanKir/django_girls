@@ -1,26 +1,25 @@
+from django.contrib.auth.models import User
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import Http404
 from django.utils import timezone
-from mainpage.models import Task
+from mainpage.models import Task, Profile
 from mainpage.forms import TaskForm
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required
 
-    
-# TODO Ян делает эту часть проекта
+
 def task_board_page(request):
     if request.method == 'GET':
         if request.user.is_authenticated:
             tasks = Task.objects.filter(
                 published_date__lte=timezone.now()
-            ).order_by('published_date')
+            ).exclude(author=request.user).order_by('published_date')
             return render(
                 request=request,
                 template_name='mainpage/task_board.html',
                 context={'tasks': tasks}
             )
         else:
-            return redirect(to='user_login_logout')
+            return redirect(to='user_login')
 
 
 def task_detail(request, pk):
@@ -72,7 +71,6 @@ def task_edit(request, pk):
         )
 
 
-# TODO Миша делает эту часть проекта
 def main_page(request):
 
     if request.user.is_authenticated:
@@ -80,73 +78,68 @@ def main_page(request):
     else:
         return render(
             request=request,
-            template_name='mainpage/mainpage_template.html'
+            template_name='mainpage/greeting.html'
         )
 
 
-def user_login_logout(request):
-
+def user_login(request):
     if request.method == 'POST':
         form_type = request.POST.get("form_type")
-
+        # TODO : использовать валидаторы для проверки данных кастомной формы
         if form_type == "login_form":
-            username = request.POST.get("login")
+            username = request.POST.get('username')
             if not username:
                 return render(
                     request=request,
                     template_name='login/login_template.html',
-                    context={"problem_description": "Не указан логин"} )
-
-        if form_type == "password_form":
-            password = request.POST.get("password")
+                    context={'problem_description1': "Username обязательное поле"}
+                )
+            password = request.POST.get('password')
             if not password:
                 return render(
-                    request = request,
-                    template_name = 'login/login_template.html',
-                    context = {"problem_description": "Не указан пароль"} )
-        user = authenticate(username=username, password=password)
-        if user is not None:
-            if user.is_active:
-                login(request,user)
-                return render(
                     request=request,
-                    template_name='mainpage/task_board.html',
-                    context={'tasks': tasks}
+                    template_name='login/login_template.html',
+                    context={'problem_description1': "Password обязательное поле"}
                 )
+            user = authenticate(username=username, password=password)
+            if user and user.is_active:
+                login(request, user)
+                return redirect(to='task_board_page')
             else:
                 return render(
                     request=request,
                     template_name='login/login_template.html',
-                    context={"problem_description": "Ошибка авторизации"})
-            # TODO : залогинить пользователя на task/board если все ок или перекинуть его назад на mainpage если нет
-
-            # TODO: После логина отправить чувака на борду
-
-        elif form_type == "registration_form":
-            form = registration_form(request.POST)
-            if form.is_valid():
-                user = form.save()
-                user.refresh_from_db()
-                user.profile.first_name = form.cleaned_data.get('first_name')
-                user.profile.last_name = form.cleaned_data.get('last_name')
-                user.profile.email = form.cleaned_data.get('email')
-                user.save()
-                username = form.cleaned_data.get('username')
-                password = form.cleaned_data.get('password1')
-                user = authenticate(username=username, password=password)
-                login(request, user)
-                return render(
-                    request=request,
-                    template_name='mainpage/task_board.html',
-                    context={'tasks': tasks}
+                    context={'problem_description1': 'Ошибка авторизации'}
                 )
+        elif form_type == "registration_form":
+            # TODO : использовать валидаторы для проверки данных кастомной формы
+            username = request.POST.get('username')
+            password = request.POST.get('password1')
+            first_name = request.POST.get('first_name')
+            last_name = request.POST.get('last_name')
+            email = request.POST.get('email')
+            user = User.objects.create_user(
+                username=username,
+                password=password
+            )
+            user.save()
+            profile = Profile.objects.create(
+                user=user,
+                first_name=first_name,
+                last_name=last_name,
+                email=email
+            )
+            profile.save()
+            user = authenticate(username=username, password=password)
+            if user and user.is_active:
+                login(request, user)
+            return redirect(to=task_board_page)
         else:
             return render(
+                # TODO редиректим чувака на главную (ошибка) not supported form exception
                 request=request,
                 template_name='login/login_template.html',
-                context={"problem_description": "not supported form exception"})
-            # TODO редиректим чувака на главную (ошибка) not supported form exception
-
+                context={"problem_description2": "Not supported form"})
     elif request.method == 'GET':
         return render(
             request=request,
@@ -154,3 +147,8 @@ def user_login_logout(request):
         )
     else:
         raise Http404("Not supported action 404")
+
+
+def user_logout(request):
+    logout(request=request)
+    return redirect(to='main_page')
