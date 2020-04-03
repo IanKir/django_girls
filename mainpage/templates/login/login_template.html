@@ -18,7 +18,7 @@
     </div>
 {% endif %}
 
-<form method="POST" action="/login/">
+<form method="POST">
     {% csrf_token %}
     <div class="form-row">
         <div class="form-group mx-sm-3 col-md-3 w-25">
@@ -32,18 +32,18 @@
                    id="id_password_1" placeholder="Password" required>
         </div>
     </div>
-    <input type="hidden" name="form_type" value="login_form">
+    <input type="hidden" name="form_type" value="sign_in_form">
     <button type="submit" class="btn mx-sm-3 btn-primary mb-3">Sign in</button>
 </form>
 
-<h2 class="mx-sm-3 mb-3" style="margin-top: 2.5em">Sign up</h2>
+<h2 class="mx-sm-3 mb-3">Sign up</h2>
 {% if problem_description2 %}
     <div class="alert alert-danger" role="alert">
         {{ problem_description2 }}
     </div>
 {% endif %}
 
-<form method="POST" action="/login/">
+<form method="POST">
     {% csrf_token %}
     <div class="input-group row mx-sm-3 mb-3">
         <label for="id_username_2" class="col-sm-2 col-form-label">Username</label>
@@ -78,7 +78,7 @@
                    id="id_password_2" placeholder="Password" required>
         </div>
     </div>
-    <input type="hidden" name="form_type" value="registration_form">
+    <input type="hidden" name="form_type" value="sign_up_form">
     <button type="submit" class="btn mx-sm-3 btn-primary mb-3">Sign up</button>
 </form>
 </body>

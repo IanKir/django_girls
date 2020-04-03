@@ -1,12 +1,18 @@
 from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, login, logout
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import Http404
 from django.utils import timezone
-from mainpage.models import Task, Profile
+
 from mainpage.forms import TaskForm
-from django.contrib.auth import authenticate, login, logout
+from mainpage.models import Task, Profile
 
 
+# TODO: сделать простые валидаторы
+# TODO: @property для модели Task
+# TODO: сделать кастомную form для tasks, как для login_form
+# TODO: сделать кнопку в mainpage_template "мои задания" /task/list/user-task/
+# FIXME: не позволяет изменять задачу, ругается на валидаторы - перепроверить
 def task_board_page(request):
     if request.method == 'GET':
         if request.user.is_authenticated:
@@ -16,8 +22,7 @@ def task_board_page(request):
             return render(
                 request=request,
                 template_name='mainpage/task_board.html',
-                context={'tasks': tasks}
-            )
+                context={'tasks': tasks})
         else:
             return redirect(to='user_login')
 
@@ -72,7 +77,6 @@ def task_edit(request, pk):
 
 
 def main_page(request):
-
     if request.user.is_authenticated:
         return redirect(to='task_board_page')
     else:
@@ -85,8 +89,7 @@ def main_page(request):
 def user_login(request):
     if request.method == 'POST':
         form_type = request.POST.get("form_type")
-        # TODO : использовать валидаторы для проверки данных кастомной формы
-        if form_type == "login_form":
+        if form_type == "sign_in_form":
             username = request.POST.get('username')
             if not username:
                 return render(
@@ -95,6 +98,8 @@ def user_login(request):
                     context={'problem_description1': "Username обязательное поле"}
                 )
             password = request.POST.get('password')
+            # Зачем проводить проверку пароля, если в форме в login_template я указал это поле обязательным
+            # И теперь оно всегда ругается, если пользователь пытается оставить его пустым
             if not password:
                 return render(
                     request=request,
@@ -111,24 +116,22 @@ def user_login(request):
                     template_name='login/login_template.html',
                     context={'problem_description1': 'Ошибка авторизации'}
                 )
-        elif form_type == "registration_form":
-            # TODO : использовать валидаторы для проверки данных кастомной формы
+        elif form_type == "sign_up_form":
             username = request.POST.get('username')
             password = request.POST.get('password1')
+            # TODO: Добавить простую проверку на длину пароля
             first_name = request.POST.get('first_name')
             last_name = request.POST.get('last_name')
             email = request.POST.get('email')
             user = User.objects.create_user(
                 username=username,
-                password=password
-            )
+                password=password)
             user.save()
             profile = Profile.objects.create(
                 user=user,
                 first_name=first_name,
                 last_name=last_name,
-                email=email
-            )
+                email=email)
             profile.save()
             user = authenticate(username=username, password=password)
             if user and user.is_active:
@@ -136,7 +139,6 @@ def user_login(request):
             return redirect(to=task_board_page)
         else:
             return render(
-                # TODO редиректим чувака на главную (ошибка) not supported form exception
                 request=request,
                 template_name='login/login_template.html',
                 context={"problem_description2": "Not supported form"})
