@@ -23,6 +23,11 @@
                 <a class="nav-link active" href="{% url 'task_new' %}">Создать задание</a>
             {% endif %}
         </li>
+{#        <li class="nav-item">#}
+{#            {% if user.is_authenticated %}#}
+{#                <a class="nav-link active" href="{% url 'task_new' %}">Мои задания</a>#}
+{#            {% endif %}#}
+{#        </li>#}
         <li class="nav-item">
             {% if user.is_authenticated %}
                 <a class="nav-link action-login" href="{% url 'user_logout' %}">LOGOUT</a>
