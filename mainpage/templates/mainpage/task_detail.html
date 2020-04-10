@@ -7,12 +7,12 @@
                 {{ task.published_date }}
             </div>
         {% endif %}
-        {% if user.is_authenticated %}
-           <a class="btn btn-default" href="{% url 'task_edit' pk=task.pk %}">
-               <span class="glyphicon glyphicon-pencil"></span></a>
-        {% endif %}
         <h1>{{ task.title }}</h1>
         <p>{{ task.text|linebreaksbr }}</p>
         <p>{{ task.author }}</p>
+        {% if user.is_authenticated %}
+            <a class="btn btn-primary" role="button"
+               href="{% url 'task_edit' pk=task.pk %}">Редактировать задание</a>
+        {% endif %}
     </div>
 {% endblock %}
