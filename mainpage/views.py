@@ -11,13 +11,18 @@ from mainpage.models import Task, Profile
 # TODO: @property для модели Task
 # TODO: сделать кастомную form для tasks, как для login_form
 # TODO: Сделать функционал принять задание, оно потом убирается из общего списка
+# todo: добавить возможность снятия задачи с выполнения пользователем, который ее создал
 def task_board_page(request):
     """Все задачи, кроме тех, что создал пользователь и которые он выполняет"""
     if request.method == 'GET':
         if request.user.is_authenticated:
             tasks = Task.objects.filter(
                 published_date__lte=timezone.now()
-            ).exclude(author=request.user).order_by('published_date')
+            ).exclude(
+                author=request.user,
+                # fixme: все равно отображает те задачи, которые принял пользователь
+                executor=request.user.profile
+            ).order_by('published_date')
             return render(
                 request=request,
                 template_name='mainpage/task_board.html',
@@ -44,8 +49,8 @@ def task_board_set(request):
 
 def task_board_performs(request):
     """Задачи, в которых пользователь является исполнителем"""
-    if request.method == 'GET':
-        if request.user.is_authenticated:
+    if request.user.is_authenticated:
+        if request.method == 'GET':
             tasks = Task.objects.filter(
                 published_date__lte=timezone.now(),
                 executor=request.user.profile
@@ -54,8 +59,27 @@ def task_board_performs(request):
                 request=request,
                 template_name='mainpage/task_board.html',
                 context={'tasks': tasks})
+    else:
+        return redirect(to='user_login')
+
+
+def accept_task(request, pk):
+    """Устанавливает исполнителя задачи"""
+    if request.user.is_authenticated:
+        # if request.method == 'POST':
+        task = get_object_or_404(Task, pk=pk)
+        if request.user != task.author:
+            task.executor.add(request.user.profile)
+            task.save()
         else:
-            return redirect(to='user_login')
+            return render(
+                request=request,
+                template_name='mainpage/task_detail.html',
+                context={'accept_error', 'Вы не можете принять задачу, которую вы создали'}
+            )
+        return redirect(to='task_board_performs')
+    else:
+        return redirect(to='user_login')
 
 
 def task_detail(request, pk):
