@@ -8,17 +8,48 @@ from mainpage.forms import TaskForm
 from mainpage.models import Task, Profile
 
 
-# TODO: сделать простые валидаторы
 # TODO: @property для модели Task
 # TODO: сделать кастомную form для tasks, как для login_form
-# TODO: сделать кнопку в mainpage_template "мои задания" /task/list/user-task/
-# FIXME: не позволяет изменять задачу, ругается на валидаторы - перепроверить
+# TODO: Сделать функционал принять задание, оно потом убирается из общего списка
 def task_board_page(request):
+    """Все задачи, кроме тех, что создал пользователь и которые он выполняет"""
     if request.method == 'GET':
         if request.user.is_authenticated:
             tasks = Task.objects.filter(
                 published_date__lte=timezone.now()
             ).exclude(author=request.user).order_by('published_date')
+            return render(
+                request=request,
+                template_name='mainpage/task_board.html',
+                context={'tasks': tasks})
+        else:
+            return redirect(to='user_login')
+
+
+def task_board_set(request):
+    """Задачи, которые пользователь поставил"""
+    if request.method == 'GET':
+        if request.user.is_authenticated:
+            tasks = Task.objects.filter(
+                published_date__lte=timezone.now(),
+                author=request.user
+            ).order_by('published_date')
+            return render(
+                request=request,
+                template_name='mainpage/task_board.html',
+                context={'tasks': tasks})
+        else:
+            return redirect(to='user_login')
+
+
+def task_board_performs(request):
+    """Задачи, в которых пользователь является исполнителем"""
+    if request.method == 'GET':
+        if request.user.is_authenticated:
+            tasks = Task.objects.filter(
+                published_date__lte=timezone.now(),
+                executor=request.user.profile
+            ).order_by('published_date')
             return render(
                 request=request,
                 template_name='mainpage/task_board.html',
@@ -99,7 +130,7 @@ def user_login(request):
                 )
             password = request.POST.get('password')
             # Зачем проводить проверку пароля, если в форме в login_template я указал это поле обязательным
-            # И теперь оно всегда ругается, если пользователь пытается оставить его пустым
+            # Потому что в html можно указать это поле не обязательным и все поломается
             if not password:
                 return render(
                     request=request,
