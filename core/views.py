@@ -328,33 +328,6 @@ def collect_request_values(request):
     }
 
 
-def check_password_len(request, request_values):
-    """Проверка пароля на заданную длинну.
-
-    Arguments:
-        request: запрос клиента
-        request_values (dict): поля и значения, введенные пользователем в форму
-
-    Returns:
-        render(): если пароль меньше n, рендер страницы
-        user_sign_up с ошибкой
-    """
-    password = request_values.get('password')
-    required_password_len = 6
-    if password and (len(password) < required_password_len):
-        return render(
-            request=request,
-            template_name='login/user_sign_up.html',
-            context={
-                'problem_description': (
-                    'Пароль должен быть длиннее ' +
-                    '{0} символов'.format(required_password_len)
-                ),
-                **request_values,
-            },
-        )
-
-
 @require_http_methods(['GET', 'POST'])
 def sign_up_user(request):
     """Регистрация пользователя.
@@ -379,10 +352,20 @@ def sign_up_user(request):
     """
     if request.method == 'POST':
         request_values = collect_request_values(request)
-        check_password_len(
-            request=request,
-            request_values=request_values,
-        )
+        password = request_values.get('password')
+        required_password_len = 6
+        if password and (len(password) < required_password_len):
+            return render(
+                request=request,
+                template_name='login/user_sign_up.html',
+                context={
+                    'problem_description': (
+                        'Пароль должен быть длиннее ' +
+                        '{0} символов'.format(required_password_len)
+                    ),
+                    **request_values,
+                },
+            )
         try:
             user = User.objects.create_user(
                 username=request_values.get('username'),
@@ -405,10 +388,19 @@ def sign_up_user(request):
         user.save()
         profile = Profile.objects.create(user=user)
         profile.save()
-        user = authenticate(username=user.username, password=user.password)
+        print(user.username, user.password)
+        user = authenticate(
+            username=request_values.get('username'),
+            password=request_values.get('password')
+        )
         if user and user.is_active:
             login(request, user)
             return redirect(to='task_board_page')
+        return render(
+            request=request,
+            template_name='login/user_sign_up.html',
+            context={'problem_description': 'Ошибка авторизации'},
+        )
     elif request.method == 'GET':
         return render(
             request=request,
