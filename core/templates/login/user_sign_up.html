@@ -1,0 +1,73 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+          integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <title>Login</title>
+</head>
+<body>
+
+
+<h2 class="mx-sm-3 mb-3">Sign up</h2>
+{% if problem_description %}
+    <div class="alert alert-danger" role="alert">
+        {{ problem_description }}
+    </div>
+{% endif %}
+
+<form method="POST">
+    {% csrf_token %}
+    <div class="input-group row mx-sm-3 mb-3">
+        <label for="id_username_2" class="col-sm-2 col-form-label">Username</label>
+        <div class="col-sm-10">
+            <input type="text" name="username" class="form-control w-50"
+                   id="id_username_2" placeholder="Username" required
+                    {% if username %}
+                   value={{ username }}
+                    {% endif %}>
+        </div>
+    </div>
+    <div class="input-group row mx-sm-3 mb-3">
+        <label for="id_first_name" class="col-sm-2 col-form-label">First name</label>
+        <div class="col-sm-10">
+            <input type="text" name="first_name" class="form-control w-50"
+                   id="id_first_name" placeholder="First name" required
+                    {% if first_name %}
+                   value={{ first_name }}
+                    {% endif %}>
+        </div>
+    </div>
+    <div class="input-group row mx-sm-3 mb-3">
+        <label for="id_last_name" class="col-sm-2 col-form-label">Last name</label>
+        <div class="col-sm-10">
+            <input type="text" name="last_name" class="form-control w-50"
+                   id="id_last_name" placeholder="Last name"
+                    {% if last_name %}
+                   value={{ last_name }}
+                    {% endif %}>
+        </div>
+    </div>
+    <div class="input-group row mx-sm-3 mb-3">
+        <label for="id_email" class="col-sm-2 col-form-label">Email</label>
+        <div class="col-sm-10">
+            <input type="email" name="email" class="form-control w-50"
+                   id="id_email" placeholder="Email"
+                    {% if email %}
+                   value={{ email }}
+                    {% endif %}>
+        </div>
+    </div>
+    <div class="input-group row mx-sm-3 mb-3">
+        <label for="id_password" class="col-sm-2 col-form-label">Password</label>
+        <div class="col-sm-10">
+            <input type="password" name="password" class="form-control w-50"
+                   id="id_password" placeholder="Password" required>
+        </div>
+    </div>
+    <button type="submit" class="btn mx-sm-3 btn-primary mb-3">Sign up</button>
+</form>
+</body>
+</html>

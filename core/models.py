@@ -40,12 +40,7 @@ class Task(models.Model):
 class Profile(models.Model):
     """Определеяет таблицу mainpage_profile в БД через ORM."""
 
-    max_length = 100
-    email_max_length = 150
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    first_name = models.CharField(max_length=max_length, blank=True)
-    last_name = models.CharField(max_length=max_length, blank=True)
-    email = models.EmailField(max_length=email_max_length, blank=True)
 
     def __str__(self):
         """Определяет поведение функции str(), вызванной для экземпляра класса.
