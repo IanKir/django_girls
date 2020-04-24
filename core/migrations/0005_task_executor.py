@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('mainpage', '0004_auto_20200322_1309'),
+        ('core', '0004_auto_20200322_1309'),
     ]
 
     operations = [
         migrations.AddField(
             model_name='task',
             name='executor',
-            field=models.ManyToManyField(blank=True, to='mainpage.Profile'),
+            field=models.ManyToManyField(blank=True, to='core.Profile'),
         ),
     ]

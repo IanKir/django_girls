@@ -1,0 +1,18 @@
+{% extends 'mainpage/mainpage_template.html' %}
+
+{% block content %}
+    {% if tasks %}
+        {% for task in tasks %}
+            <div class="task">
+                <div class="date">
+                    {{ task.published_date }}
+                </div>
+                <h1><a href="{% url 'task_detail' pk=task.pk %}">{{ task.title }}</a></h1>
+                <p class="text">{{ task.text|linebreaksbr }}</p>
+                <p class="author">{{ task.author|linebreaksbr }}</p>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p class="text">Здесь пока нет задач для вас.</p>
+    {% endif %}
+{% endblock %}
