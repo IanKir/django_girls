@@ -1,6 +1,7 @@
 """Модуль обработки запросов от пользователя."""
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.db import DatabaseError
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
@@ -16,6 +17,30 @@ from core.models import Task, Profile
 #  оно потом убирается из общего списка
 # todo: добавить возможность снятия задачи
 #  с выполнения пользователем, который ее создал
+
+def get_tasks_paginator(tasks, pages_quantity, page):
+    """Выполняет пагинацию запроса из БД.
+
+    Arguments:
+        tasks: задачи из БД
+        pages_quantity: количнство страниц для пагинации
+        page: номер страницы из запроса клиента
+
+    Return:
+        tasks: задачи после пагинации
+    """
+    paginator = Paginator(tasks, pages_quantity)
+
+    try:
+        tasks = paginator.get_page(page)
+    except PageNotAnInteger:
+        tasks = paginator.get_page(1)
+    except EmptyPage:
+        tasks = paginator.get_page(paginator.num_pages)
+
+    return tasks
+
+
 def task_board_page(request):
     """Все задачи, кроме тех, что создал пользователь и которые он выполняет.
 
@@ -31,17 +56,27 @@ def task_board_page(request):
     """
     if request.method == 'GET':
         if request.user.is_authenticated:
-            tasks = Task.objects.filter(
-                published_date__lte=timezone.now(),
-            ).exclude(
-                author=request.user,
-            ).exclude(
-                executor=request.user.profile,
-            ).order_by('published_date')
+            page = request.GET.get('page')
+            try:
+                tasks = Task.objects.filter(
+                    published_date__lte=timezone.now(),
+                ).exclude(
+                    author=request.user,
+                ).exclude(
+                    executor=request.user.profile,
+                ).order_by('published_date')
+            except DatabaseError:
+                tasks = {}
+
+            tasks_to_response = get_tasks_paginator(
+                tasks=tasks,
+                pages_quantity=7,
+                page=page,
+            )
             return render(
                 request=request,
                 template_name='mainpage/task_board.html',
-                context={'tasks': tasks},
+                context={'tasks': tasks_to_response},
             )
         return redirect(to='user_login')
 
@@ -61,14 +96,24 @@ def task_board_set(request):
     """
     if request.method == 'GET':
         if request.user.is_authenticated:
-            tasks = Task.objects.filter(
-                published_date__lte=timezone.now(),
-                author=request.user,
-            ).order_by('published_date')
+            page = request.GET.get('page')
+            try:
+                tasks = Task.objects.filter(
+                    published_date__lte=timezone.now(),
+                    author=request.user,
+                ).order_by('published_date')
+            except DatabaseError:
+                tasks = {}
+
+            tasks_to_response = get_tasks_paginator(
+                tasks=tasks,
+                pages_quantity=7,
+                page=page,
+            )
             return render(
                 request=request,
                 template_name='mainpage/task_board.html',
-                context={'tasks': tasks},
+                context={'tasks': tasks_to_response},
             )
         return redirect(to='user_login')
 
@@ -88,14 +133,24 @@ def task_board_performs(request):
     """
     if request.user.is_authenticated:
         if request.method == 'GET':
-            tasks = Task.objects.filter(
-                published_date__lte=timezone.now(),
-                executor=request.user.profile,
-            ).order_by('published_date')
+            page = request.GET.get('page')
+            try:
+                tasks = Task.objects.filter(
+                    published_date__lte=timezone.now(),
+                    executor=request.user.profile,
+                ).order_by('published_date')
+            except DatabaseError:
+                tasks = {}
+
+            tasks_to_response = get_tasks_paginator(
+                tasks=tasks,
+                pages_quantity=7,
+                page=page,
+            )
             return render(
                 request=request,
                 template_name='mainpage/task_board.html',
-                context={'tasks': tasks},
+                context={'tasks': tasks_to_response},
             )
     return redirect(to='user_login')
 
@@ -360,8 +415,8 @@ def sign_up_user(request):
                 template_name='login/user_sign_up.html',
                 context={
                     'problem_description': (
-                        'Пароль должен быть длиннее ' +
-                        '{0} символов'.format(required_password_len)
+                            'Пароль должен быть длиннее ' +
+                            '{0} символов'.format(required_password_len)
                     ),
                     **request_values,
                 },
@@ -381,7 +436,7 @@ def sign_up_user(request):
                 context={
                     'problem_description': (
                         'Такой пользователь уже существует ' +
-                        'или {0}'.format(data_base_error),
+                        'или {0}'.format(str(data_base_error)),
                     ),
                 },
             )
