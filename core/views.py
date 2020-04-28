@@ -11,7 +11,6 @@ from core.forms import TaskForm
 from core.models import Task, Profile
 
 
-# TODO: @property для модели Task
 # TODO: сделать кастомную form для tasks, как для login_form
 # TODO: Сделать функционал принять задание,
 #  оно потом убирается из общего списка
