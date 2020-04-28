@@ -12,8 +12,6 @@ from core.models import Task, Profile
 
 
 # TODO: сделать кастомную form для tasks, как для login_form
-# TODO: Сделать функционал принять задание,
-#  оно потом убирается из общего списка
 # todo: добавить возможность снятия задачи
 #  с выполнения пользователем, который ее создал
 
@@ -75,7 +73,10 @@ def task_board_page(request):
             return render(
                 request=request,
                 template_name='mainpage/task_board.html',
-                context={'tasks': tasks_to_response},
+                context={
+                    'tasks': tasks_to_response,
+                    'which_func': 'task_board_page',
+                },
             )
         return redirect(to='user_login')
 
@@ -112,7 +113,10 @@ def task_board_set(request):
             return render(
                 request=request,
                 template_name='mainpage/task_board.html',
-                context={'tasks': tasks_to_response},
+                context={
+                    'tasks': tasks_to_response,
+                    'which_func': 'task_board_set',
+                },
             )
         return redirect(to='user_login')
 
@@ -149,7 +153,10 @@ def task_board_performs(request):
             return render(
                 request=request,
                 template_name='mainpage/task_board.html',
-                context={'tasks': tasks_to_response},
+                context={
+                    'tasks': tasks_to_response,
+                    'which_func': 'task_board_performs',
+                },
             )
     return redirect(to='user_login')
 

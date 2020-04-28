@@ -15,6 +15,9 @@
                     <div class="card-text">
                         <p class="text">{{ task.text|linebreaksbr }}</p>
                         <p class="author">{{ task.author|linebreaksbr }}</p>
+                        {% if task.executor|length %}
+                            <p class="executor">{{ task.executor }}</p>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -47,9 +50,19 @@
             </ul>
         </nav>
     {% else %}
-        <div class="alert alert-info" role="alert">
-            Здесь пока нет задач для вас.
-        </div>
+        {% if which_func == 'task_board_page' %}
+            <div class="alert alert-info" role="alert">
+                Здесь пока нет задач для вас.
+            </div>
+        {% elif which_func == 'task_board_set' %}
+            <div class="alert alert-info" role="alert">
+                Вы пока не поставили ни одной задачи.
+            </div>
+        {% elif which_func == 'task_board_performs' %}
+            <div class="alert alert-info" role="alert">
+                Вы пока не выполняете ни одной задачи.
+            </div>
+        {% endif %}
     {% endif %}
 
 
