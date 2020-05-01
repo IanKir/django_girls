@@ -15,7 +15,7 @@
                     <div class="card-text">
                         <p class="text">{{ task.text|linebreaksbr }}</p>
                         <p class="author">{{ task.author|linebreaksbr }}</p>
-                        {% if task.executor|length %}
+                        {% if task.executor and not 'Core.Profile.None' %}
                             <p class="executor">{{ task.executor }}</p>
                         {% endif %}
                     </div>

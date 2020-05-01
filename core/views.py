@@ -11,10 +11,9 @@ from core.forms import TaskForm
 from core.models import Task, Profile
 
 
-# TODO: сделать кастомную form для tasks, как для login_form
-# todo: добавить возможность снятия задачи
-#  с выполнения пользователем, который ее создал
-
+# todo: сделать кастомную form для tasks, как для login_form
+# todo: добавить возможность скрыть задачу или приостановить ее выполнение
+# todo: убрать кнопку выполнить задание, если я уже являюсь ее исполнителем
 def get_tasks_paginator(tasks, pages_quantity, page):
     """Выполняет пагинацию запроса из БД.
 
@@ -38,6 +37,121 @@ def get_tasks_paginator(tasks, pages_quantity, page):
     return tasks
 
 
+# todo: должен быть комментарий почему снял
+def cancel_task(request, pk):
+    """Отмена выполнения задачи.
+
+    Arguments:
+        request: запрос от клиента
+        pk (int): primary key(id) для задачи(task)
+
+    Returns:
+        render(): если пользователь не является автором задачи,
+        то он не может убрать исполнителя и потом рендер страницы
+        с ошибкой
+
+        redirect(): если пользователь является автором задачи
+        и удалось заменить исполнителя задачи на пустую строку,
+        то редирект на поставленные задачи
+
+        redirect(): если пользователь не авторизован,то редирект
+        на регистрацию
+    """
+    if request.user.is_authenticated:
+        task = get_object_or_404(Task, pk=pk)
+        if request.user == task.author:
+            task.executor.clear()
+            task.save()
+        else:
+            error_string = ('Вы не можете '
+                            'убрать исполнителя задачи,'
+                            'если не являетесь ее автором')
+            return render(
+                request=request,
+                template_name='mainpage/task_detail.html',
+                context={
+                    'accept_error': error_string,
+                },
+            )
+        return redirect(to='task_board_set')
+    return redirect(to='user_login')
+
+
+def remove_task(request, pk):
+    """Удалить задачу.
+
+    Arguments:
+        request: запрос от клиента
+        pk (int): primary key(id) для задачи(task)
+
+    Returns:
+        render(): если пользователь не является автором задачи,
+        то он не может убрать исполнителя и потом рендер страницы
+        с ошибкой
+
+        redirect(): если пользователь является автором задачи
+        и task удалось удалить, то редирект на поставленные задачи
+
+        redirect(): если пользователь не авторизован, то редирект
+        на регистрацию
+    """
+    if request.user.is_authenticated:
+        task = get_object_or_404(Task, pk=pk)
+        if request.user == task.author:
+            task.delete()
+        else:
+            error_string = ('Вы не можете '
+                            'удалить задачу,'
+                            'если не являетесь ее автором')
+            return render(
+                request=request,
+                template_name='mainpage/task_detail.html',
+                context={
+                    'accept_error': error_string,
+                },
+            )
+        return redirect(to='task_board_set')
+    return redirect(to='user_login')
+
+
+def refuse_task(request, pk):
+    """Отказаться от задачи.
+
+    Arguments:
+        request: запрос от клиента
+        pk (int): primary key(id) для задачи(task)
+
+    Returns:
+        render(): если пользователь не является исполнителем задачи,
+        то он не может отказаться выполнять задачу, рендер страницы
+        с ошибкой
+
+        redirect(): если пользователь является исполнителем задачи
+        то executor = None и редирект на выполняемые задачи
+
+        redirect(): если пользователь не авторизован, то редирект
+        на регистрацию
+    """
+    if request.user.is_authenticated:
+        task = get_object_or_404(Task, pk=pk)
+        if request.user.profile in task.executor.all():
+            task.executor.remove(request.user.profile)
+            task.save()
+        else:
+            error_string = ('Вы не можете '
+                            'отказаться от задачи,'
+                            'если являетесь ее автором')
+            return render(
+                request=request,
+                template_name='mainpage/task_detail.html',
+                context={
+                    'accept_error': error_string,
+                },
+            )
+        return redirect(to='task_board_performs')
+    return redirect(to='user_login')
+
+
 def task_board_page(request):
     """Все задачи, кроме тех, что создал пользователь и которые он выполняет.
 
@@ -51,8 +165,8 @@ def task_board_page(request):
         redirect(): редирект пользователя на страницу регистрации,
         если он не зарегистрирован
     """
-    if request.method == 'GET':
-        if request.user.is_authenticated:
+    if request.user.is_authenticated:
+        if request.method == 'GET':
             page = request.GET.get('page')
             try:
                 tasks = Task.objects.filter(
@@ -78,7 +192,7 @@ def task_board_page(request):
                     'which_func': 'task_board_page',
                 },
             )
-        return redirect(to='user_login')
+    return redirect(to='user_login')
 
 
 def task_board_set(request):
@@ -94,8 +208,8 @@ def task_board_set(request):
         redirect(): редирект пользователя на страницу регистрации,
         если он не зарегистрирован
     """
-    if request.method == 'GET':
-        if request.user.is_authenticated:
+    if request.user.is_authenticated:
+        if request.method == 'GET':
             page = request.GET.get('page')
             try:
                 tasks = Task.objects.filter(
@@ -118,7 +232,7 @@ def task_board_set(request):
                     'which_func': 'task_board_set',
                 },
             )
-        return redirect(to='user_login')
+    return redirect(to='user_login')
 
 
 def task_board_performs(request):
@@ -180,7 +294,7 @@ def accept_task(request, pk):
     """
     if request.user.is_authenticated:
         task = get_object_or_404(Task, pk=pk)
-        if request.user is not task.author:
+        if request.user != task.author:
             task.executor.add(request.user.profile)
             task.save()
         else:
@@ -449,7 +563,6 @@ def sign_up_user(request):
         user.save()
         profile = Profile.objects.create(user=user)
         profile.save()
-        print(user.username, user.password)
         user = authenticate(
             username=request_values.get('username'),
             password=request_values.get('password')

@@ -2,24 +2,38 @@
 
 {% block content %}
     <div class="task">
-
-        {% if task.published_date %}
-            <div class="date">
-                {{ task.published_date }}
-            </div>
-        {% endif %}
-        <h1>{{ task.title }}</h1>
-        <p>{{ task.text|linebreaksbr }}</p>
-        <p>{{ task.author }}</p>
-        {% if user.is_authenticated %}
-            {% if user == task.author %}
-                <a class="btn btn-primary" role="button"
-                   href="{% url 'task_edit' pk=task.pk %}">Редактировать задание</a>
-            {% else %}
-                <a class="btn btn-primary" role="button"
-                   href="{% url 'accept_task' pk=task.pk %}">Принять задание</a>
+        {% if task %}
+            {% if task.published_date %}
+                <div class="date">
+                    {{ task.published_date }}
+                </div>
+            {% endif %}
+            <h1>{{ task.title }}</h1>
+            <p>{{ task.text|linebreaksbr }}</p>
+            <p>{{ task.author }}</p>
+            {% if taks.executor %}
+                <p>{{ task.executor }}</p>
+            {% endif %}
+            {% if user.is_authenticated %}
+                {% if user == task.author %}
+                    <a class="btn btn-primary" role="button"
+                       href="{% url 'task_edit' pk=task.pk %}">Редактировать задание</a>
+                    <a class="btn btn-warning" role="button"
+                       href="{% url 'cancel_task' pk=task.pk %}">Отменить выполнение</a>
+                    <a class="btn btn-danger" role="button"
+                       href="{% url 'remove_task' pk=task.pk %}">Удалить задание</a>
+                {% else %}
+                    {% if user.profile in task.executor.all %}
+                        <a class="btn btn-warning" role="button"
+                           href="{% url 'refuse_task' pk=task.pk %}">Отказаться выполнять</a>
+                    {% else %}
+                        <a class="btn btn-primary" role="button"
+                           href="{% url 'accept_task' pk=task.pk %}">Принять задание</a>
+                    {% endif %}
+                {% endif %}
             {% endif %}
         {% endif %}
+
         {% if accept_error %}
             {{ accept_error }}
         {% endif %}
