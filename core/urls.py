@@ -15,6 +15,13 @@ urlpatterns = [
     path('task/<int:pk>/', views.task_detail, name='task_detail'),
     path('task/<int:pk>/edit/', views.task_edit, name='task_edit'),
     path('task/<int:pk>/accept/', views.accept_task, name='accept_task'),
+    path('task/<int:pk>/remove/', views.remove_task, name='remove_task'),
+    path('task/<int:pk>/refuse/', views.refuse_task, name='refuse_task'),
+    path(
+        'task/<int:pk>/remove-task-executor/',
+        views.cancel_task,
+        name='cancel_task',
+    ),
     path('user-sign-in/', views.sign_in_user, name='sign_in_user'),
     path('user-sign-up/', views.sign_up_user, name='sign_up_user'),
     path('user-logout/', views.user_logout, name='user_logout'),

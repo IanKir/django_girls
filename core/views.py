@@ -1,6 +1,7 @@
 """Модуль обработки запросов от пользователя."""
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.db import DatabaseError
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
@@ -10,12 +11,147 @@ from core.forms import TaskForm
 from core.models import Task, Profile
 
 
-# TODO: @property для модели Task
-# TODO: сделать кастомную form для tasks, как для login_form
-# TODO: Сделать функционал принять задание,
-#  оно потом убирается из общего списка
-# todo: добавить возможность снятия задачи
-#  с выполнения пользователем, который ее создал
+# todo: сделать кастомную form для tasks, как для login_form
+# todo: добавить возможность скрыть задачу или приостановить ее выполнение
+# todo: убрать кнопку выполнить задание, если я уже являюсь ее исполнителем
+def get_tasks_paginator(tasks, pages_quantity, page):
+    """Выполняет пагинацию запроса из БД.
+
+    Arguments:
+        tasks: задачи из БД
+        pages_quantity: количнство страниц для пагинации
+        page: номер страницы из запроса клиента
+
+    Return:
+        tasks: задачи после пагинации
+    """
+    paginator = Paginator(tasks, pages_quantity)
+
+    try:
+        tasks = paginator.get_page(page)
+    except PageNotAnInteger:
+        tasks = paginator.get_page(1)
+    except EmptyPage:
+        tasks = paginator.get_page(paginator.num_pages)
+
+    return tasks
+
+
+# todo: должен быть комментарий почему снял
+def cancel_task(request, pk):
+    """Отмена выполнения задачи.
+
+    Arguments:
+        request: запрос от клиента
+        pk (int): primary key(id) для задачи(task)
+
+    Returns:
+        render(): если пользователь не является автором задачи,
+        то он не может убрать исполнителя и потом рендер страницы
+        с ошибкой
+
+        redirect(): если пользователь является автором задачи
+        и удалось заменить исполнителя задачи на пустую строку,
+        то редирект на поставленные задачи
+
+        redirect(): если пользователь не авторизован,то редирект
+        на регистрацию
+    """
+    if request.user.is_authenticated:
+        task = get_object_or_404(Task, pk=pk)
+        if request.user == task.author:
+            task.executor.clear()
+            task.save()
+        else:
+            error_string = ('Вы не можете '
+                            'убрать исполнителя задачи,'
+                            'если не являетесь ее автором')
+            return render(
+                request=request,
+                template_name='mainpage/task_detail.html',
+                context={
+                    'accept_error': error_string,
+                },
+            )
+        return redirect(to='task_board_set')
+    return redirect(to='user_login')
+
+
+def remove_task(request, pk):
+    """Удалить задачу.
+
+    Arguments:
+        request: запрос от клиента
+        pk (int): primary key(id) для задачи(task)
+
+    Returns:
+        render(): если пользователь не является автором задачи,
+        то он не может убрать исполнителя и потом рендер страницы
+        с ошибкой
+
+        redirect(): если пользователь является автором задачи
+        и task удалось удалить, то редирект на поставленные задачи
+
+        redirect(): если пользователь не авторизован, то редирект
+        на регистрацию
+    """
+    if request.user.is_authenticated:
+        task = get_object_or_404(Task, pk=pk)
+        if request.user == task.author:
+            task.delete()
+        else:
+            error_string = ('Вы не можете '
+                            'удалить задачу,'
+                            'если не являетесь ее автором')
+            return render(
+                request=request,
+                template_name='mainpage/task_detail.html',
+                context={
+                    'accept_error': error_string,
+                },
+            )
+        return redirect(to='task_board_set')
+    return redirect(to='user_login')
+
+
+def refuse_task(request, pk):
+    """Отказаться от задачи.
+
+    Arguments:
+        request: запрос от клиента
+        pk (int): primary key(id) для задачи(task)
+
+    Returns:
+        render(): если пользователь не является исполнителем задачи,
+        то он не может отказаться выполнять задачу, рендер страницы
+        с ошибкой
+
+        redirect(): если пользователь является исполнителем задачи
+        то executor = None и редирект на выполняемые задачи
+
+        redirect(): если пользователь не авторизован, то редирект
+        на регистрацию
+    """
+    if request.user.is_authenticated:
+        task = get_object_or_404(Task, pk=pk)
+        if request.user.profile in task.executor.all():
+            task.executor.remove(request.user.profile)
+            task.save()
+        else:
+            error_string = ('Вы не можете '
+                            'отказаться от задачи,'
+                            'если являетесь ее автором')
+            return render(
+                request=request,
+                template_name='mainpage/task_detail.html',
+                context={
+                    'accept_error': error_string,
+                },
+            )
+        return redirect(to='task_board_performs')
+    return redirect(to='user_login')
+
+
 def task_board_page(request):
     """Все задачи, кроме тех, что создал пользователь и которые он выполняет.
 
@@ -29,21 +165,34 @@ def task_board_page(request):
         redirect(): редирект пользователя на страницу регистрации,
         если он не зарегистрирован
     """
-    if request.method == 'GET':
-        if request.user.is_authenticated:
-            tasks = Task.objects.filter(
-                published_date__lte=timezone.now(),
-            ).exclude(
-                author=request.user,
-            ).exclude(
-                executor=request.user.profile,
-            ).order_by('published_date')
+    if request.user.is_authenticated:
+        if request.method == 'GET':
+            page = request.GET.get('page')
+            try:
+                tasks = Task.objects.filter(
+                    published_date__lte=timezone.now(),
+                ).exclude(
+                    author=request.user,
+                ).exclude(
+                    executor=request.user.profile,
+                ).order_by('published_date')
+            except DatabaseError:
+                tasks = {}
+
+            tasks_to_response = get_tasks_paginator(
+                tasks=tasks,
+                pages_quantity=7,
+                page=page,
+            )
             return render(
                 request=request,
                 template_name='mainpage/task_board.html',
-                context={'tasks': tasks},
+                context={
+                    'tasks': tasks_to_response,
+                    'which_func': 'task_board_page',
+                },
             )
-        return redirect(to='user_login')
+    return redirect(to='user_login')
 
 
 def task_board_set(request):
@@ -59,18 +208,31 @@ def task_board_set(request):
         redirect(): редирект пользователя на страницу регистрации,
         если он не зарегистрирован
     """
-    if request.method == 'GET':
-        if request.user.is_authenticated:
-            tasks = Task.objects.filter(
-                published_date__lte=timezone.now(),
-                author=request.user,
-            ).order_by('published_date')
+    if request.user.is_authenticated:
+        if request.method == 'GET':
+            page = request.GET.get('page')
+            try:
+                tasks = Task.objects.filter(
+                    published_date__lte=timezone.now(),
+                    author=request.user,
+                ).order_by('published_date')
+            except DatabaseError:
+                tasks = {}
+
+            tasks_to_response = get_tasks_paginator(
+                tasks=tasks,
+                pages_quantity=7,
+                page=page,
+            )
             return render(
                 request=request,
                 template_name='mainpage/task_board.html',
-                context={'tasks': tasks},
+                context={
+                    'tasks': tasks_to_response,
+                    'which_func': 'task_board_set',
+                },
             )
-        return redirect(to='user_login')
+    return redirect(to='user_login')
 
 
 def task_board_performs(request):
@@ -88,14 +250,27 @@ def task_board_performs(request):
     """
     if request.user.is_authenticated:
         if request.method == 'GET':
-            tasks = Task.objects.filter(
-                published_date__lte=timezone.now(),
-                executor=request.user.profile,
-            ).order_by('published_date')
+            page = request.GET.get('page')
+            try:
+                tasks = Task.objects.filter(
+                    published_date__lte=timezone.now(),
+                    executor=request.user.profile,
+                ).order_by('published_date')
+            except DatabaseError:
+                tasks = {}
+
+            tasks_to_response = get_tasks_paginator(
+                tasks=tasks,
+                pages_quantity=7,
+                page=page,
+            )
             return render(
                 request=request,
                 template_name='mainpage/task_board.html',
-                context={'tasks': tasks},
+                context={
+                    'tasks': tasks_to_response,
+                    'which_func': 'task_board_performs',
+                },
             )
     return redirect(to='user_login')
 
@@ -119,7 +294,7 @@ def accept_task(request, pk):
     """
     if request.user.is_authenticated:
         task = get_object_or_404(Task, pk=pk)
-        if request.user is not task.author:
+        if request.user != task.author:
             task.executor.add(request.user.profile)
             task.save()
         else:
@@ -328,33 +503,6 @@ def collect_request_values(request):
     }
 
 
-def check_password_len(request, request_values):
-    """Проверка пароля на заданную длинну.
-
-    Arguments:
-        request: запрос клиента
-        request_values (dict): поля и значения, введенные пользователем в форму
-
-    Returns:
-        render(): если пароль меньше n, рендер страницы
-        user_sign_up с ошибкой
-    """
-    password = request_values.get('password')
-    required_password_len = 6
-    if password and (len(password) < required_password_len):
-        return render(
-            request=request,
-            template_name='login/user_sign_up.html',
-            context={
-                'problem_description': (
-                    'Пароль должен быть длиннее ' +
-                    '{0} символов'.format(required_password_len)
-                ),
-                **request_values,
-            },
-        )
-
-
 @require_http_methods(['GET', 'POST'])
 def sign_up_user(request):
     """Регистрация пользователя.
@@ -379,10 +527,20 @@ def sign_up_user(request):
     """
     if request.method == 'POST':
         request_values = collect_request_values(request)
-        check_password_len(
-            request=request,
-            request_values=request_values,
-        )
+        password = request_values.get('password')
+        required_password_len = 6
+        if password and (len(password) < required_password_len):
+            return render(
+                request=request,
+                template_name='login/user_sign_up.html',
+                context={
+                    'problem_description': (
+                            'Пароль должен быть длиннее ' +
+                            '{0} символов'.format(required_password_len)
+                    ),
+                    **request_values,
+                },
+            )
         try:
             user = User.objects.create_user(
                 username=request_values.get('username'),
@@ -398,17 +556,25 @@ def sign_up_user(request):
                 context={
                     'problem_description': (
                         'Такой пользователь уже существует ' +
-                        'или {0}'.format(data_base_error),
+                        'или {0}'.format(str(data_base_error)),
                     ),
                 },
             )
         user.save()
         profile = Profile.objects.create(user=user)
         profile.save()
-        user = authenticate(username=user.username, password=user.password)
+        user = authenticate(
+            username=request_values.get('username'),
+            password=request_values.get('password')
+        )
         if user and user.is_active:
             login(request, user)
             return redirect(to='task_board_page')
+        return render(
+            request=request,
+            template_name='login/user_sign_up.html',
+            context={'problem_description': 'Ошибка авторизации'},
+        )
     elif request.method == 'GET':
         return render(
             request=request,

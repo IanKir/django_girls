@@ -1,18 +1,69 @@
 {% extends 'mainpage/mainpage_template.html' %}
+{% load static %}
 
 {% block content %}
     {% if tasks %}
         {% for task in tasks %}
-            <div class="task">
-                <div class="date">
-                    {{ task.published_date }}
+            <div class="task card" style="width: 25rem; margin: 0.5rem;">
+                <div class="card-body">
+                    <div class="date">
+                        {{ task.published_date }}
+                    </div>
+                    <div class="card-title">
+                        <h1><a href="{% url 'task_detail' pk=task.pk %}">{{ task.title }}</a></h1>
+                    </div>
+                    <div class="card-text">
+                        <p class="text">{{ task.text|linebreaksbr }}</p>
+                        <p class="author">{{ task.author|linebreaksbr }}</p>
+                        {% if task.executor and not 'Core.Profile.None' %}
+                            <p class="executor">{{ task.executor }}</p>
+                        {% endif %}
+                    </div>
                 </div>
-                <h1><a href="{% url 'task_detail' pk=task.pk %}">{{ task.title }}</a></h1>
-                <p class="text">{{ task.text|linebreaksbr }}</p>
-                <p class="author">{{ task.author|linebreaksbr }}</p>
             </div>
         {% endfor %}
+
+        <nav aria-label="..." style="margin: 0.5rem;">
+            <ul class="pagination">
+                {% if tasks.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1">&laquo; first</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ tasks.previous_page_number }}">previous</a>
+
+                    </li>
+                {% endif %}
+                <li class="page-item disabled">
+                    <span class="page-link">
+                    Page {{ tasks.number }} of {{ tasks.paginator.num_pages }}.
+                    </span>
+                </li>
+                {% if tasks.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ tasks.next_page_number }}">next</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ tasks.paginator.num_pages }}">last &raquo;</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
     {% else %}
-        <p class="text">Здесь пока нет задач для вас.</p>
+        {% if which_func == 'task_board_page' %}
+            <div class="alert alert-info" role="alert">
+                Здесь пока нет задач для вас.
+            </div>
+        {% elif which_func == 'task_board_set' %}
+            <div class="alert alert-info" role="alert">
+                Вы пока не поставили ни одной задачи.
+            </div>
+        {% elif which_func == 'task_board_performs' %}
+            <div class="alert alert-info" role="alert">
+                Вы пока не выполняете ни одной задачи.
+            </div>
+        {% endif %}
     {% endif %}
+
+
 {% endblock %}
