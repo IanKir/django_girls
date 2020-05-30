@@ -24,4 +24,4 @@ python manage.py createsuperuser
 ```
 python manage.py runserver
 ```
-#### Поздравляю Вы великолепны
+#### Поздравляю, Вы великолепны
