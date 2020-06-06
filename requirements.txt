@@ -2,7 +2,7 @@ astor==0.8.1
 attrs==19.3.0
 bandit==1.6.2
 darglint==1.2.3
-Django==2.2.10
+Django==2.2.13
 docutils==0.16
 entrypoints==0.3
 eradicate==1.0
